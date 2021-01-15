@@ -1,10 +1,16 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strconv"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/google/go-github/v33/github"
+	"golang.org/x/oauth2"
 )
 
 type Config struct {
@@ -14,7 +20,7 @@ type Config struct {
 }
 
 func main() {
-	err := run()
+	err := run(os.Args)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -23,10 +29,26 @@ func main() {
 	os.Exit(0)
 }
 
-func run() error {
+func run(args []string) error {
+	issuable := ""
+
+	if len(args) == 2 {
+		// 第一引数
+		issuable = args[1]
+	}
+
+	isnum := 0
+	i, err := strconv.Atoi(issuable)
+	if err == nil {
+		isnum = i
+	} else {
+		fmt.Println("issue num is not valid: %s", err)
+	}
+
 	debug := false
 	if os.Getenv("DEBUG") != "" {
 		debug = true
+		fmt.Println("debug")
 	}
 
 	if debug {
@@ -36,20 +58,52 @@ func run() error {
 		}
 	}
 
-	r, err := git.PlainOpen("./")
+	_, err = git.PlainOpen("./")
 	if err != nil {
 		return err
 	}
 
-	w, err := r.Worktree()
+	// w, err := r.Worktree()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// opt := &git.PullOptions{Auth:}
+	// opt.Validate()
+
+	// err = w.Pull(opt)
+	// if err != nil {
+	// 	return err
+	// }
+
+	f, err := os.Open("/Users/ykpythemind/.git-brws-token")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	b, err := ioutil.ReadAll(f)
 	if err != nil {
 		return err
 	}
 
-	err = w.Pull(&git.PullOptions{})
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: string(bytes.TrimSpace(b))},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+
+	client := github.NewClient(tc)
+
+	is, res, err := client.Issues.Get(ctx, "coubic", "coubic-issues", isnum)
 	if err != nil {
 		return err
 	}
+
+	_ = res
+
+	fmt.Println(*is.Title)
+	fmt.Println(*is.Body)
 
 	return nil
 }
