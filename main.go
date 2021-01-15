@@ -17,6 +17,8 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/MakeNowJust/heredoc/v2"
+
+	"golang.org/x/exp/utf8string"
 )
 
 type Config struct {
@@ -113,13 +115,14 @@ func run(args []string) error {
 	_ = res
 
 	template := fmt.Sprintf(heredoc.Doc(`
-	branch: xxx
+	branch:
 	title: %s
+	base issue: %s
 
 	---
 
 	%s
-	`), *is.Title, *is.Body)
+	`), *is.Title, *is.HTMLURL, *is.Body)
 
 	editedTemplate, err := CaptureInputFromEditor(template)
 	if err != nil {
@@ -148,12 +151,12 @@ func parseTemplate(template string, config *Config) error {
 	for scanner.Scan() {
 		text := strings.TrimSpace(scanner.Text())
 		if !titleFound && strings.HasPrefix(text, "title:") {
-			title = text[6:]
+			title = strings.TrimSpace(text[6:])
 			titleFound = true
 		}
 
 		if !branchFound && strings.HasPrefix(text, "branch:") {
-			branch = text[7:]
+			branch = strings.TrimSpace(text[7:])
 			branchFound = true
 		}
 	}
@@ -166,6 +169,13 @@ func parseTemplate(template string, config *Config) error {
 		return errors.New("branch is not specified")
 	}
 
+	// validate branch name
+	utf8str := utf8string.NewString(branch)
+	if !utf8str.IsASCII() {
+		return fmt.Errorf("invalid branch name: %s. only ascii code is allowed", branch)
+	}
+
+	// todo: type Template struct
 	config.pullRequestTitle = title
 	config.switchBranch = branch
 

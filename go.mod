@@ -6,5 +6,6 @@ require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/google/go-github/v33 v33.0.0
+	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6
 	golang.org/x/oauth2 v0.0.0-20210113205817-d3ed898aa8a3
 )
