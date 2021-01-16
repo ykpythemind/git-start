@@ -257,7 +257,7 @@ func CaptureInputFromEditor(content string) (string, error) {
 }
 
 func extractRepository(str string) (owner, repo string, err error) {
-	// "ykpythemind/fuga" => owner: ykpythemind, repo: fuga
+	// "ykpythemind/fuga.git" => owner: ykpythemind, repo: fuga
 
 	sp := strings.Split(str, "/")
 
@@ -265,7 +265,10 @@ func extractRepository(str string) (owner, repo string, err error) {
 		return "", "", errors.New("fail to extract repository like string")
 	}
 
-	return sp[0], sp[1], nil
+	owner = sp[0]
+	repo = strings.TrimSuffix(sp[1], ".git")
+
+	return
 }
 
 // strategy
