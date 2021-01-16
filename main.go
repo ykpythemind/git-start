@@ -21,7 +21,7 @@ import (
 	"golang.org/x/exp/utf8string"
 )
 
-type Config struct {
+type StarterConfig struct {
 	Strategy         string
 	BaseBranch       string
 	IssueConfig      string
@@ -40,7 +40,7 @@ func main() {
 }
 
 func run(args []string) error {
-	config := &Config{}
+	config := &StarterConfig{}
 
 	issuable := ""
 
@@ -82,6 +82,8 @@ func run(args []string) error {
 
 	// opt := &git.PullOptions{Auth:}
 	// opt.Validate()
+
+	// todo: pull first
 
 	// err = w.Pull(opt)
 	// if err != nil {
@@ -139,7 +141,7 @@ func run(args []string) error {
 	return nil
 }
 
-func parseTemplate(template string, config *Config) error {
+func parseTemplate(template string, config *StarterConfig) error {
 	scanner := bufio.NewScanner(strings.NewReader(template))
 	scanner.Split(bufio.ScanLines)
 
@@ -215,7 +217,6 @@ func CaptureInputFromEditor(content string) (string, error) {
 
 	filename := file.Name()
 
-	// Defer removal of the temporary file in case any of the next steps fail.
 	defer os.Remove(filename)
 
 	if err = file.Close(); err != nil {
@@ -238,3 +239,16 @@ func CaptureInputFromEditor(content string) (string, error) {
 //   - github flow
 // main branch
 //   - master
+
+// Issuable
+//   issueっぽいやつ urlないしはissue number
+//   ParseIssuable
+// Template
+//   作成ブランチ名, PRタイトルを決める
+//   ParseTemplate
+// StarterConfig
+// GitConfig
+//   localからIssueBaseとかをとってくる
+// Starter
+//   Configを元にgit startを実行
+// PullRequestStarter
