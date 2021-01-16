@@ -271,6 +271,15 @@ func extractRepository(str string) (owner, repo string, err error) {
 	return
 }
 
+func GitCommand(args ...string) (*exec.Cmd, error) {
+	gitExe, err := exec.LookPath("git")
+	if err != nil {
+		return nil, err
+	}
+
+	return exec.Command(gitExe, args...), nil
+}
+
 // strategy
 //   - github flow
 // main branch
