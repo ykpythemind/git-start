@@ -209,7 +209,9 @@ func run(args []string) error {
 	}
 
 	// save PR title for later use
-	config.Save()
+	if err := config.Save(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -342,7 +344,20 @@ func runPR(r *git.Repository, owner string, repo string) error {
 	if !ref.Name().IsBranch() {
 		return errors.New("current head is not branch")
 	}
+
 	branch := ref.Name().String()
+	branch = strings.Replace(branch, "refs/heads/", "", 1)
+
+	// first, push
+	cmd, err := GitCommand("push", "-u", "origin")
+	if err != nil {
+		return err
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return err
+	}
 
 	conf, err := newStarterConfigFromFile(branch)
 	if err != nil {
