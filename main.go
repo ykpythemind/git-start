@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc/v2"
 
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"golang.org/x/exp/utf8string"
 )
 
@@ -40,6 +40,25 @@ func main() {
 }
 
 func run(args []string) error {
+	r, err := git.PlainOpen("./")
+	if err != nil {
+		return err
+	}
+
+	remotes, err := r.Remotes()
+	if err != nil {
+		return err
+	}
+	if len(remotes) < 1 {
+		return errors.New("remote is not exist")
+	}
+	remote := remotes[0] // first remote
+
+	remoteEndpoint, err := transport.NewEndpoint(remote.Config().URLs[0])
+	if err != nil {
+		return err
+	}
+
 	config := &StarterConfig{}
 
 	issuable := ""
@@ -49,31 +68,33 @@ func run(args []string) error {
 		issuable = args[1]
 	}
 
-	isnum := 0
-	i, err := strconv.Atoi(issuable)
-	if err == nil {
-		isnum = i
-	} else {
-		fmt.Println("issue num is not valid: %s", err)
-	}
-
-	debug := false
-	if os.Getenv("DEBUG") != "" {
-		debug = true
-		fmt.Println("debug")
-	}
-
-	if debug {
-		err := os.Chdir("/Users/ykpythemind/git/github.com/ykpythemind/sandbox")
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = git.PlainOpen("./")
+	ghIssue, err := ParseIssuable(issuable)
 	if err != nil {
 		return err
 	}
+
+	// issue numだけ指定されてownerとrepoが分からなかった場合
+	if ghIssue.Owner == "" && ghIssue.Repo == "" {
+		owner, repo, err := extractRepository(remoteEndpoint.Path)
+		if err != nil {
+			return err
+		}
+		ghIssue.Owner = owner
+		ghIssue.Repo = repo
+	}
+
+	// debug := false
+	// if os.Getenv("DEBUG") != "" {
+	// 	debug = true
+	// 	fmt.Println("debug")
+	// }
+
+	// if debug {
+	// 	err := os.Chdir("/Users/ykpythemind/git/github.com/ykpythemind/sandbox")
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	// w, err := r.Worktree()
 	// if err != nil {
@@ -109,7 +130,7 @@ func run(args []string) error {
 
 	client := github.NewClient(tc)
 
-	is, res, err := client.Issues.Get(ctx, "coubic", "coubic-issues", isnum)
+	is, res, err := client.Issues.Get(ctx, ghIssue.Owner, ghIssue.Repo, ghIssue.Number)
 	if err != nil {
 		return err
 	}
@@ -233,6 +254,18 @@ func CaptureInputFromEditor(content string) (string, error) {
 	}
 
 	return string(bytes), nil
+}
+
+func extractRepository(str string) (owner, repo string, err error) {
+	// "ykpythemind/fuga" => owner: ykpythemind, repo: fuga
+
+	sp := strings.Split(str, "/")
+
+	if len(sp) != 2 {
+		return "", "", errors.New("fail to extract repository like string")
+	}
+
+	return sp[0], sp[1], nil
 }
 
 // strategy
