@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -12,8 +11,6 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/google/go-github/v33/github"
-	"golang.org/x/oauth2"
 
 	"github.com/MakeNowJust/heredoc/v2"
 
@@ -68,14 +65,14 @@ func run(args []string) error {
 		issuable = args[1]
 	}
 
-	ghIssue, err := ParseIssuable(issuable)
+	ghIssue, err := ParseGitHubIssuable(issuable)
 	if err != nil {
 		return err
 	}
 
-	// issue numだけ指定されてownerとrepoが分からなかった場合
+	// issue numだけ指定されてownerとrepoが分からなかった場合はgit remoteから推測しにいく
 	if ghIssue.Owner == "" && ghIssue.Repo == "" {
-		owner, repo, err := extractRepository(remoteEndpoint.Path)
+		owner, repo, err := extractRepositoryPath(remoteEndpoint.Path)
 		if err != nil {
 			return err
 		}
@@ -96,39 +93,11 @@ func run(args []string) error {
 		}
 	}
 
-	// w, err := r.Worktree()
-	// if err != nil {
-	// 	return err
-	// }
-
-	// opt := &git.PullOptions{Auth:}
-	// opt.Validate()
-
-	// todo: pull first
-
-	// err = w.Pull(opt)
-	// if err != nil {
-	// 	return err
-	// }
-
-	f, err := os.Open("/Users/ykpythemind/.git-brws-token")
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	b, err := ioutil.ReadAll(f)
-	if err != nil {
-		return err
-	}
-
 	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: string(bytes.TrimSpace(b))},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
+	client, err := NewGitHubClient(ctx)
+	if err != nil {
+		return err
+	}
 
 	is, res, err := client.Issues.Get(ctx, ghIssue.Owner, ghIssue.Repo, ghIssue.Number)
 	if err != nil {
@@ -156,8 +125,6 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("%+v\n", config)
 
 	cmd, err := GitCommand("switch", "-c", config.switchBranch)
 	if err != nil {
@@ -278,7 +245,7 @@ func CaptureInputFromEditor(content string) (string, error) {
 	return string(bytes), nil
 }
 
-func extractRepository(str string) (owner, repo string, err error) {
+func extractRepositoryPath(str string) (owner, repo string, err error) {
 	// "/ykpythemind/git-start.git" => owner: ykpythemind, repo: git-start
 	str = strings.TrimPrefix(str, "/")
 

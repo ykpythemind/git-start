@@ -6,23 +6,13 @@ import (
 	"strings"
 )
 
-type Issue struct {
-	Title string
-	URL   string
-	Body  string
-}
-
-// type Issuable interface {
-// 	FetchIssue(ctx context.Context) (Issue, error)
-// }
-
 type GitHubIssue struct {
 	Owner  string
 	Repo   string
 	Number int
 }
 
-func ParseIssuable(str string) (*GitHubIssue, error) {
+func ParseGitHubIssuable(str string) (*GitHubIssue, error) {
 	str = strings.TrimSpace(str)
 
 	// 番号だけだった場合
@@ -58,5 +48,3 @@ func ParseIssuable(str string) (*GitHubIssue, error) {
 
 	return &GitHubIssue{Owner: owner, Repo: repo, Number: isNum}, nil
 }
-
-// func extractRepository
