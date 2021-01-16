@@ -349,7 +349,7 @@ func runPR(r *git.Repository, owner string, repo string) error {
 	branch = strings.Replace(branch, "refs/heads/", "", 1)
 
 	// first, push
-	cmd, err := GitCommand("push", "-u", "origin")
+	cmd, err := GitCommand("push", "-u", "origin", branch)
 	if err != nil {
 		return err
 	}
