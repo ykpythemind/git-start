@@ -159,7 +159,7 @@ func run(args []string) error {
 
 	fmt.Printf("%+v\n", config)
 
-	cmd, err := GitCommand(fmt.Sprintf("switch -c %s", config.switchBranch))
+	cmd, err := GitCommand("switch", "-c", config.switchBranch)
 	if err != nil {
 		return err
 	}
