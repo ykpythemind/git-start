@@ -279,7 +279,8 @@ func CaptureInputFromEditor(content string) (string, error) {
 }
 
 func extractRepository(str string) (owner, repo string, err error) {
-	// "ykpythemind/fuga.git" => owner: ykpythemind, repo: fuga
+	// "/ykpythemind/git-start.git" => owner: ykpythemind, repo: git-start
+	str = strings.TrimPrefix(str, "/")
 
 	sp := strings.Split(str, "/")
 
