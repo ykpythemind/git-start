@@ -83,18 +83,18 @@ func run(args []string) error {
 		ghIssue.Repo = repo
 	}
 
-	// debug := false
-	// if os.Getenv("DEBUG") != "" {
-	// 	debug = true
-	// 	fmt.Println("debug")
-	// }
+	debug := false
+	if os.Getenv("DEBUG") != "" {
+		debug = true
+		fmt.Println("debug")
+	}
 
-	// if debug {
-	// 	err := os.Chdir("/Users/ykpythemind/git/github.com/ykpythemind/sandbox")
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+	if debug {
+		err := os.Chdir("/Users/ykpythemind/git/github.com/ykpythemind/sandbox")
+		if err != nil {
+			return err
+		}
+	}
 
 	// w, err := r.Worktree()
 	// if err != nil {
@@ -158,6 +158,28 @@ func run(args []string) error {
 	}
 
 	fmt.Printf("%+v\n", config)
+
+	cmd, err := GitCommand(fmt.Sprintf("switch -c %s", config.switchBranch))
+	if err != nil {
+		return err
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	cmd, err = GitCommand("status")
+	if err != nil {
+		return err
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
 
 	return nil
 }
