@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -16,14 +18,70 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"golang.org/x/exp/utf8string"
+
+	"github.com/pkg/browser"
 )
 
 type StarterConfig struct {
-	Strategy         string
-	BaseBranch       string
-	IssueConfig      string
 	switchBranch     string
 	pullRequestTitle string
+}
+
+func (s *StarterConfig) Save() error {
+	configDir := s.configDir()
+
+	_, err := os.Stat(configDir)
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(configDir, os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	f, err := os.OpenFile(s.savePath(), os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	if _, err := f.Write([]byte(s.pullRequestTitle)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *StarterConfig) configDir() string {
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	return path.Join(homedir, ".config", "git-start")
+}
+
+func (s *StarterConfig) savePath() string {
+	// todo: branch名に/とか入ると死ぬ？
+	return path.Join(s.configDir(), s.switchBranch)
+}
+
+func newStarterConfigFromFile(branch string) (*StarterConfig, error) {
+	conf := &StarterConfig{switchBranch: branch}
+
+	f, err := os.Open(conf.savePath())
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	// 今はprタイトルしか保存しない. 構造化して保存しておいたほうがいいかも
+	conf.pullRequestTitle = string(b)
+
+	return conf, nil
 }
 
 func main() {
@@ -37,6 +95,10 @@ func main() {
 }
 
 func run(args []string) error {
+	if len(args) == 1 {
+		return errors.New("arg is invalid. issue is required")
+	}
+
 	r, err := git.PlainOpen("./")
 	if err != nil {
 		return err
@@ -54,6 +116,14 @@ func run(args []string) error {
 	remoteEndpoint, err := transport.NewEndpoint(remote.Config().URLs[0])
 	if err != nil {
 		return err
+	}
+
+	if args[1] == "pr" || args[1] == "pull-request" {
+		owner, repo, err := extractRepositoryPath(remoteEndpoint.Path)
+		if err != nil {
+			return err
+		}
+		return runPR(r, owner, repo)
 	}
 
 	config := &StarterConfig{}
@@ -101,10 +171,11 @@ func run(args []string) error {
 
 	is, res, err := client.Issues.Get(ctx, ghIssue.Owner, ghIssue.Repo, ghIssue.Number)
 	if err != nil {
+		if res.StatusCode == 404 {
+			return fmt.Errorf("issue %d is not found", ghIssue.Number)
+		}
 		return err
 	}
-
-	_ = res
 
 	template := fmt.Sprintf(heredoc.Doc(`
 	branch:
@@ -137,16 +208,8 @@ func run(args []string) error {
 		return err
 	}
 
-	cmd, err = GitCommand("status")
-	if err != nil {
-		return err
-	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		return err
-	}
+	// save PR title for later use
+	config.Save()
 
 	return nil
 }
@@ -270,20 +333,30 @@ func GitCommand(args ...string) (*exec.Cmd, error) {
 	return exec.Command(gitExe, args...), nil
 }
 
-// strategy
-//   - github flow
-// main branch
-//   - master
+func runPR(r *git.Repository, owner string, repo string) error {
+	ref, err := r.Head()
+	if err != nil {
+		return err
+	}
 
-// Issuable
-//   issueっぽいやつ urlないしはissue number
-//   ParseIssuable
-// Template
-//   作成ブランチ名, PRタイトルを決める
-//   ParseTemplate
-// StarterConfig
-// GitConfig
-//   localからIssueBaseとかをとってくる
-// Starter
-//   Configを元にgit startを実行
-// PullRequestStarter
+	if !ref.Name().IsBranch() {
+		return errors.New("current head is not branch")
+	}
+	branch := ref.Name().String()
+
+	conf, err := newStarterConfigFromFile(branch)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			// todo: fallback
+		}
+
+		return err
+	}
+
+	title := url.QueryEscape(conf.pullRequestTitle)
+
+	// fixme: base branchを記録する必要あり
+	url := fmt.Sprintf("https://github.com/%s/%s/compare/main...%s?quick_pull=1&title=%s", owner, repo, branch, title)
+
+	return browser.OpenURL(url)
+}
