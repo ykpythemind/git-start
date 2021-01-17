@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/MakeNowJust/heredoc/v2 v2.0.1
 	github.com/cli/cli v1.4.0
+	github.com/google/go-cmp v0.5.2
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/pkg/browser v0.0.0-20210115035449-ce105d075bb4
