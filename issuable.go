@@ -66,13 +66,13 @@ func StarterTemplate(issue *Issue) string {
 	branch: %d_
 	title: %s
 
-	// Edit branch name to checkout. title will be used for PR title.
-	// Original issue URL is %s
+	// Edit branch name to checkout. title will be PR title.
+	// Original issue is '%s' (%s)
 
 	---
 
 	%s
-	`), issue.Number, issue.Title, issue.URL, issue.Body)
+	`), issue.Number, issue.Title, issue.Title, issue.URL, issue.Body)
 
 	return t
 }
