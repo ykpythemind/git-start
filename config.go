@@ -11,13 +11,13 @@ import (
 )
 
 type Config struct {
-	Dir               string
-	Remote            string
+	ConfigDir         string
+	GitRemote         string
 	CurrentBranch     string
 	CurrentRepository Repository
 }
 
-// SetupConfigはCLIの設定を初期化します.
+// NewConfigはCLIの設定を初期化します.
 func NewConfig() (*Config, error) {
 	confdir, err := os.UserConfigDir()
 	if err != nil {
@@ -25,7 +25,7 @@ func NewConfig() (*Config, error) {
 	}
 
 	conf := &Config{}
-	conf.Dir = path.Join(confdir, "git-start")
+	conf.ConfigDir = path.Join(confdir, "git-start")
 
 	remotes, err := git.Remotes()
 	if err != nil {
@@ -36,7 +36,7 @@ func NewConfig() (*Config, error) {
 	}
 
 	// first remote
-	conf.Remote = remotes[0].Name
+	conf.GitRemote = remotes[0].Name
 	remoteURL := remotes[0].FetchURL
 
 	repo, err := GuessRepositoryFromRemoteURL(remoteURL)
@@ -45,20 +45,20 @@ func NewConfig() (*Config, error) {
 	}
 	conf.CurrentRepository = *repo
 
-	b, err := git.CurrentBranch()
+	br, err := git.CurrentBranch()
 	if err != nil {
 		return nil, err
 	}
 
-	conf.CurrentBranch = b
+	conf.CurrentBranch = br
 
 	return conf, nil
 }
 
 func SetupConfigDir(c *Config) error {
-	_, err := os.Stat(c.Dir)
+	_, err := os.Stat(c.ConfigDir)
 	if os.IsNotExist(err) {
-		if err := os.MkdirAll(c.Dir, os.ModePerm); err != nil {
+		if err := os.MkdirAll(c.ConfigDir, os.ModePerm); err != nil {
 			return err
 		}
 	}
@@ -67,7 +67,7 @@ func SetupConfigDir(c *Config) error {
 }
 
 func (c *Config) StarterOptionStoragePath() string {
-	return filepath.Join(c.Dir, "starter-option-storage.json")
+	return filepath.Join(c.ConfigDir, "starter-option-storage.json")
 }
 
 func (c *Config) StarterOptionKey(branch string) string {

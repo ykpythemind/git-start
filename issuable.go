@@ -9,7 +9,13 @@ import (
 	"github.com/MakeNowJust/heredoc/v2"
 )
 
-type GitHubIssue struct {
+type GitHubIssuable struct {
+	Owner  string
+	Repo   string
+	Number int
+}
+
+type Issue struct {
 	Owner  string
 	Repo   string
 	Number int
@@ -18,12 +24,12 @@ type GitHubIssue struct {
 	Title  string
 }
 
-func ParseGitHubIssuable(str string) (*GitHubIssue, error) {
+func ParseGitHubIssuable(str string) (*GitHubIssuable, error) {
 	str = strings.TrimSpace(str)
 
 	// 番号だけだった場合
 	if i, err := strconv.Atoi(str); err == nil {
-		return &GitHubIssue{Number: i}, nil
+		return &GitHubIssuable{Number: i}, nil
 	}
 
 	str = strings.TrimPrefix(str, "https://")
@@ -52,19 +58,21 @@ func ParseGitHubIssuable(str string) (*GitHubIssue, error) {
 		return nil, errors.New("can't parse issue number")
 	}
 
-	return &GitHubIssue{Owner: owner, Repo: repo, Number: isNum}, nil
+	return &GitHubIssuable{Owner: owner, Repo: repo, Number: isNum}, nil
 }
 
-func (i *GitHubIssue) StarterTemplate() string {
+func StarterTemplate(issue *Issue) string {
 	t := fmt.Sprintf(heredoc.Doc(`
 	branch: %d_
 	title: %s
-	issue URL: %s
+
+	// Edit branch name to checkout. title will be used for PR title.
+	// Original issue URL is %s
 
 	---
 
 	%s
-	`), i.Number, i.Title, i.URL, i.Body)
+	`), issue.Number, issue.Title, issue.URL, issue.Body)
 
 	return t
 }

@@ -77,7 +77,7 @@ func run(args []string) error {
 			return err
 		}
 
-		template = foundIssue.StarterTemplate()
+		template = gitstart.StarterTemplate(foundIssue)
 	} else {
 		// unreachable
 		panic("not github")
