@@ -8,22 +8,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cli/cli/git"
 	"golang.org/x/exp/utf8string"
 )
 
-type StarterOption struct {
-	SwitchBranch     string `json:"switchBranch"`
-	PullRequestTitle string `json:"pullRequestTitle"`
-	BaseBranch       string `json:"baseBranch"`
-}
-
-type StarterOptionStorage struct {
+type HistoryStorage struct {
 	Content map[string]*StarterOption
 	Path    string
 }
 
-func (s *StarterOptionStorage) Fetch(key string) *StarterOption {
+func (s *HistoryStorage) Get(key string) *StarterOption {
 	opt, ok := s.Content[key]
 	if !ok {
 		return nil
@@ -32,7 +25,7 @@ func (s *StarterOptionStorage) Fetch(key string) *StarterOption {
 	return opt
 }
 
-func (s *StarterOptionStorage) Write(key string, opt *StarterOption) error {
+func (s *HistoryStorage) Set(key string, opt *StarterOption) error {
 	s.Content[key] = opt
 
 	f, err := os.OpenFile(s.Path, os.O_WRONLY|os.O_CREATE, 0644)
@@ -48,8 +41,8 @@ func (s *StarterOptionStorage) Write(key string, opt *StarterOption) error {
 	return nil
 }
 
-func NewStarterOptionStorage(storagePath string) (*StarterOptionStorage, error) {
-	storage := &StarterOptionStorage{
+func NewHistoryStorage(storagePath string) (*HistoryStorage, error) {
+	storage := &HistoryStorage{
 		Path:    storagePath,
 		Content: make(map[string]*StarterOption),
 	}
@@ -91,7 +84,7 @@ func NewStarterOptionStorage(storagePath string) (*StarterOptionStorage, error) 
 	return storage, nil
 }
 
-func ParseStarterTemplate(template string) (*StarterOption, error) {
+func NewStarterOptionFromTemplate(template string) (*StarterOption, error) {
 	starterOption := &StarterOption{}
 
 	scanner := bufio.NewScanner(strings.NewReader(template))
@@ -133,30 +126,4 @@ func ParseStarterTemplate(template string) (*StarterOption, error) {
 	starterOption.SwitchBranch = branch
 
 	return starterOption, nil
-}
-
-func Start(config *Config, opt *StarterOption) error {
-	optStorage, err := NewStarterOptionStorage(config.StarterOptionStoragePath())
-	if err != nil {
-		return err
-	}
-
-	cmd, err := git.GitCommand("switch", "-c", opt.SwitchBranch)
-	if err != nil {
-		return err
-	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	// save PR title and option for later use
-	key := config.StarterOptionKey(opt.SwitchBranch)
-	if err := optStorage.Write(key, opt); err != nil {
-		return err
-	}
-
-	return nil
 }
