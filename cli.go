@@ -267,7 +267,7 @@ func NewStarterOptionFromTemplate(template string) (*StarterOption, error) {
 	}
 
 	if branch == "" {
-		return nil, errors.New("branch is not specified")
+		return nil, errors.New("aborting start due to empty branch.")
 	}
 
 	// validate branch name
