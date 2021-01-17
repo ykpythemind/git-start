@@ -1,4 +1,4 @@
-package main
+package gitstart
 
 import (
 	"reflect"
@@ -11,23 +11,23 @@ func TestParseGitHubIssuable(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    arg
-		want    *GitHubIssue
+		want    *GitHubIssuable
 		wantErr bool
 	}{
 		{
 			name: "only issue number",
 			args: "1000",
-			want: &GitHubIssue{Number: 1000},
+			want: &GitHubIssuable{Number: 1000},
 		},
 		{
 			name: "GitHub repo",
 			args: "https://github.com/ykpythemind/piyo/issues/1234",
-			want: &GitHubIssue{Number: 1234, Owner: "ykpythemind", Repo: "piyo"},
+			want: &GitHubIssuable{Number: 1234, Owner: "ykpythemind", Repo: "piyo"},
 		},
 		{
 			name: "GitHub repo with blank",
 			args: "  https://github.com/ykpythemind/piyo/issues/1234\n  ",
-			want: &GitHubIssue{Number: 1234, Owner: "ykpythemind", Repo: "piyo"},
+			want: &GitHubIssuable{Number: 1234, Owner: "ykpythemind", Repo: "piyo"},
 		},
 		{
 			name:    "GitHub repo (issue num is not present)",

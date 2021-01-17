@@ -1,4 +1,4 @@
-package main
+package gitstart
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 )
 
 // todo: make interface
-func FetchGitHubIssue(ctx context.Context, ghIssue *GitHubIssue) (*GitHubIssue, error) {
+func FetchGitHubIssue(ctx context.Context, ghIssue *GitHubIssuable) (*Issue, error) {
 	client, err := NewGitHubClient(ctx)
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func FetchGitHubIssue(ctx context.Context, ghIssue *GitHubIssue) (*GitHubIssue, 
 		return nil, err
 	}
 
-	return &GitHubIssue{
+	return &Issue{
 		Owner:  ghIssue.Owner,
 		Repo:   ghIssue.Repo,
 		Number: ghIssue.Number,
