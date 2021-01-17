@@ -28,6 +28,7 @@ $ go build -o /usr/local/bin/git-start ./cmd/start
   - checkoutした瞬間にempty commitしてPR作成しに行くとか? 
   - GitLab等対応
   - git config localに issue repositoryを設定する機能
+  - 複数remoteがある時の諸々
 - 実装済
   - git remoteから issue urlを推測するのでイシュー番号だけでもなんとかなる機能
 
