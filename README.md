@@ -8,15 +8,14 @@ $ go build -o /usr/local/bin/git-start ./cmd/start
 
 ## 解説
 
-![2021-01-17 22 35 46](https://user-images.githubusercontent.com/22209702/104844845-c806b480-5915-11eb-870f-2505f455db68.gif)
-
-- 以下の手順を毎回行っているが毎回ブラウザやエディタの切り替えでコンテキストスイッチが発生してウーンとなっていた。
+- [課題] 以下の手順を毎回行っているが毎回ブラウザやエディタの切り替えでコンテキストスイッチが発生してウーンとなっていた。
   - GitHubのissue内容を見る
   - 適切にブランチ名をつける
   - 実装
   - git push
   - PRを作成する
 - どうせならCLIから完結するようにした
+  - ![2021-01-17 22 35 46](https://user-images.githubusercontent.com/22209702/104844845-c806b480-5915-11eb-870f-2505f455db68.gif)
   - `git start [issue num] | [issue url]`
     - GitHubのAPIからイシュー内容を取得し、エディタに展開する
     - ブランチ名, 後で使うPRタイトル（実装内容）を入力してエディタを終了するとブランチが作成される
