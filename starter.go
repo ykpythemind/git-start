@@ -1,4 +1,4 @@
-package main
+package gitstart
 
 import (
 	"bufio"
@@ -23,7 +23,7 @@ type StarterOptionStorage struct {
 	Path    string
 }
 
-func (s *StarterOptionStorage) fetch(key string) *StarterOption {
+func (s *StarterOptionStorage) Fetch(key string) *StarterOption {
 	opt, ok := s.Content[key]
 	if !ok {
 		return nil
@@ -32,7 +32,7 @@ func (s *StarterOptionStorage) fetch(key string) *StarterOption {
 	return opt
 }
 
-func (s *StarterOptionStorage) write(key string, opt *StarterOption) error {
+func (s *StarterOptionStorage) Write(key string, opt *StarterOption) error {
 	s.Content[key] = opt
 
 	f, err := os.OpenFile(s.Path, os.O_WRONLY|os.O_CREATE, 0644)
@@ -91,7 +91,7 @@ func NewStarterOptionStorage(storagePath string) (*StarterOptionStorage, error) 
 	return storage, nil
 }
 
-func parseStarterTemplate(template string) (*StarterOption, error) {
+func ParseStarterTemplate(template string) (*StarterOption, error) {
 	starterOption := &StarterOption{}
 
 	scanner := bufio.NewScanner(strings.NewReader(template))
@@ -154,7 +154,7 @@ func Start(config *Config, opt *StarterOption) error {
 
 	// save PR title and option for later use
 	key := config.StarterOptionKey(opt.SwitchBranch)
-	if err := optStorage.write(key, opt); err != nil {
+	if err := optStorage.Write(key, opt); err != nil {
 		return err
 	}
 

@@ -10,6 +10,8 @@ import (
 	"github.com/cli/cli/git"
 
 	"github.com/pkg/browser"
+
+	"github.com/ykpythemind/git-start"
 )
 
 func main() {
@@ -36,11 +38,11 @@ func run(args []string) error {
 		return errors.New("arg is invalid. issue is required")
 	}
 
-	config, err := NewConfig()
+	config, err := gitstart.NewConfig()
 	if err != nil {
 		return err
 	}
-	if err := SetupConfigDir(config); err != nil {
+	if err := gitstart.SetupConfigDir(config); err != nil {
 		return err
 	}
 
@@ -56,9 +58,9 @@ func run(args []string) error {
 
 	var template string
 
-	if config.CurrentRepository.Hosting == GitHub {
+	if config.CurrentRepository.Hosting == gitstart.GitHub {
 
-		ghIssue, err := ParseGitHubIssuable(issuable)
+		ghIssue, err := gitstart.ParseGitHubIssuable(issuable)
 		if err != nil {
 			return err
 		}
@@ -70,7 +72,7 @@ func run(args []string) error {
 		}
 		ctx := context.Background()
 
-		foundIssue, err := FetchGitHubIssue(ctx, ghIssue)
+		foundIssue, err := gitstart.FetchGitHubIssue(ctx, ghIssue)
 		if err != nil {
 			return err
 		}
@@ -81,35 +83,35 @@ func run(args []string) error {
 		panic("not github")
 	}
 
-	editedTemplate, err := CaptureInputFromEditor(template)
+	editedTemplate, err := gitstart.CaptureInputFromEditor(template)
 	if err != nil {
 		return err
 	}
 
-	opt, err := parseStarterTemplate(editedTemplate)
+	opt, err := gitstart.ParseStarterTemplate(editedTemplate)
 	if err != nil {
 		return err
 	}
 	opt.BaseBranch = config.CurrentBranch
 
-	if err := Start(config, opt); err != nil {
+	if err := gitstart.Start(config, opt); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func runPRCommand(config *Config) error {
+func runPRCommand(config *gitstart.Config) error {
 	currentBranch := config.CurrentBranch
 
-	optStorage, err := NewStarterOptionStorage(config.StarterOptionStoragePath())
+	optStorage, err := gitstart.NewStarterOptionStorage(config.StarterOptionStoragePath())
 	if err != nil {
 		return err
 	}
 
 	key := config.StarterOptionKey(currentBranch)
 
-	starterOption := optStorage.fetch(key)
+	starterOption := optStorage.Fetch(key)
 	if starterOption == nil {
 		// not found. fallback?
 		return errors.New("git-start history not found. did you exec git-start on this branch?")
