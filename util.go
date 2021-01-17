@@ -6,6 +6,7 @@ import (
 	"os/exec"
 )
 
+// https://samrapdev.com/capturing-sensitive-input-with-editor-in-golang-from-the-cli/
 func OpenFileInEditor(editor string, filename string) error {
 	if editor == "" {
 		editor = os.Getenv("EDITOR")
