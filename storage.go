@@ -1,14 +1,8 @@
 package gitstart
 
 import (
-	"bufio"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"os"
-	"strings"
-
-	"golang.org/x/exp/utf8string"
 )
 
 type HistoryStorage struct {
@@ -82,48 +76,4 @@ func NewHistoryStorage(storagePath string) (*HistoryStorage, error) {
 	}
 
 	return storage, nil
-}
-
-func NewStarterOptionFromTemplate(template string) (*StarterOption, error) {
-	starterOption := &StarterOption{}
-
-	scanner := bufio.NewScanner(strings.NewReader(template))
-	scanner.Split(bufio.ScanLines)
-
-	title := ""
-	titleFound := false
-	branch := ""
-	branchFound := false
-
-	for scanner.Scan() {
-		text := strings.TrimSpace(scanner.Text())
-		if !titleFound && strings.HasPrefix(text, "title:") {
-			title = strings.TrimSpace(text[6:])
-			titleFound = true
-		}
-
-		if !branchFound && strings.HasPrefix(text, "branch:") {
-			branch = strings.TrimSpace(text[7:])
-			branchFound = true
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	if branch == "" {
-		return nil, errors.New("branch is not specified")
-	}
-
-	// validate branch name
-	utf8str := utf8string.NewString(branch)
-	if !utf8str.IsASCII() {
-		return nil, fmt.Errorf("invalid branch name: %s. only ascii code is allowed", branch)
-	}
-
-	starterOption.PullRequestTitle = title
-	starterOption.SwitchBranch = branch
-
-	return starterOption, nil
 }

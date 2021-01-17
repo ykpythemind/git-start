@@ -1,6 +1,7 @@
 package gitstart
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/cli/cli/git"
 	"github.com/pkg/browser"
+	"golang.org/x/exp/utf8string"
 )
 
 type CLIMode int
@@ -234,4 +236,60 @@ type StarterOption struct {
 	SwitchBranch     string `json:"switchBranch"`
 	PullRequestTitle string `json:"pullRequestTitle"`
 	BaseBranch       string `json:"baseBranch"`
+}
+
+func NewStarterOptionFromTemplate(template string) (*StarterOption, error) {
+	starterOption := &StarterOption{}
+
+	scanner := bufio.NewScanner(strings.NewReader(template))
+	scanner.Split(bufio.ScanLines)
+
+	title := ""
+	titleFound := false
+	branch := ""
+	branchFound := false
+
+	for scanner.Scan() {
+		text := strings.TrimSpace(scanner.Text())
+		if !titleFound && strings.HasPrefix(text, "title:") {
+			title = strings.TrimSpace(text[6:])
+			titleFound = true
+		}
+
+		if !branchFound && strings.HasPrefix(text, "branch:") {
+			branch = strings.TrimSpace(text[7:])
+			branchFound = true
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	if branch == "" {
+		return nil, errors.New("branch is not specified")
+	}
+
+	// validate branch name
+	branch, err := sanitizeBranchName(branch)
+	if err != nil {
+		return nil, err
+	}
+
+	starterOption.PullRequestTitle = title
+	starterOption.SwitchBranch = branch
+
+	return starterOption, nil
+}
+
+func sanitizeBranchName(branch string) (string, error) {
+	utf8str := utf8string.NewString(branch)
+	if !utf8str.IsASCII() {
+		return "", fmt.Errorf("invalid branch name: %s. only ascii code is allowed", branch)
+	}
+
+	// replace whitespace
+	branch = strings.Join(strings.Fields(branch), "_")
+
+	return branch, nil
 }
